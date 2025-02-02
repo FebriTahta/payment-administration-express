@@ -1,0 +1,8 @@
+# Ignore dependencies & env files
+node_modules/
+.env
+
+# Ignore semua isi dalam folder config
+src/config/
+src/config/
+src/config/

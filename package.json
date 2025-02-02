@@ -1,0 +1,29 @@
+{
+  "name": "express_payment_administration_electronics",
+  "version": "1.0.0",
+  "description": "backend express",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Febri Tahta",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "firebase-admin": "^13.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "midtrans-client": "^1.4.2",
+    "nodemon": "^3.1.9",
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.2.1"
+  }
+}

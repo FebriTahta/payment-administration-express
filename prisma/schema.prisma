@@ -1,0 +1,152 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model siswa {
+  id              Int                         @id @default(autoincrement())
+  NIS             String                      @unique
+  NISN            String?
+  NAMASISWA       String
+  GENDER          String
+  TINGKAT         Int
+  KDROMBEL        String
+  STATUSAKADEMIK  String
+  created_at      DateTime
+  updated_at      DateTime
+
+  payments        payment_core[]              @relation("SiswaToPayments")
+  siswa_epayment_core epayment_core[]         @relation("SiswaToECore")   
+  siswa_web_token web_token?                  @relation("WebTokenSiswa")
+}
+
+model payment_comp {
+  id               Int                        @id @default(autoincrement())
+  nama_komponen    String
+  jatuh_tempo      DateTime
+  total_bayar      Int
+  tanggal          DateTime?
+  status           Int
+  created_by       String
+  updated_by       String
+  jurusan          String
+  kelas            String
+  khusus_bilingual Int
+  created_at       DateTime
+  updated_at       DateTime
+
+  payment_details  payment_detail[]           @relation("CompToDetails")
+
+  @@map("mas_comp_bayar")
+}
+
+model payment_core {
+  id              Int                         @id @default(autoincrement())
+  kd_trans        String                      @unique
+  nis             String              
+  tanggal_bayar   DateTime
+  total_bayar     Int
+  keterangan      String?
+  created_by      String
+  updated_by      String?
+  kategori        String
+  metode_bayar    String
+  status          Int
+  created_at      DateTime
+  updated_at      DateTime
+
+  payment_details payment_detail[]            @relation("CoreToDetails")
+  siswa           siswa?                      @relation("SiswaToPayments", fields: [nis], references: [NIS]) // Hubungkan dengan NIS di siswa
+
+  @@map("tra_bayar_hdr")
+}
+
+model payment_detail {
+  id                  Int             @id @default(autoincrement())
+  kd_trans            String
+  comp_bayar_id       Int
+  nominal_bayar       Int
+  status              Int
+  created_at          DateTime
+  updated_at          DateTime
+
+  payment_core        payment_core?   @relation("CoreToDetails", fields: [kd_trans], references: [kd_trans], map: "tra_bayar_dtl_kd_trans_fkey_core")
+  payment_comp        payment_comp?   @relation("CompToDetails", fields: [comp_bayar_id], references: [id])
+  payment_detail_ecore epayment_core? @relation("DetailToEcore", fields: [kd_trans], references: [kd_trans], map: "tra_bayar_dtl_kd_trans_fkey_ecore")
+
+  @@map("tra_bayar_dtl")
+}
+
+
+model epayment_core {
+  id              Int                         @id @default(autoincrement())
+  kd_trans        String                      @unique
+  transaction_id  String
+  order_id        String                      @unique
+  gross_amount    Int
+  transaction_status String
+  transaction_time String
+  payment_type    String
+  nis             String
+  name            String
+  kdrombel        String
+  components      String
+  expiry_time     String
+  va              String?
+  action          String?
+
+  epayment_core_siswa     siswa?              @relation("SiswaToECore", fields: [nis], references: [NIS])
+  epayment_core_details   payment_detail[]    @relation("DetailToEcore")
+  epayment_core_va        epayment_va?        @relation("TypeToECore")
+  epayment_core_action    epayment_action[]   @relation("ActionToECore")
+
+  @@map("epayment_core")
+}
+
+model epayment_va {
+  id              Int                         @id @default(autoincrement())
+  epayment_core_id Int                        @unique
+  va_number       String
+  bank            String
+
+  epayment_va_core        epayment_core?      @relation("TypeToECore", fields: [epayment_core_id], references: [id])
+
+  @@map("epayment_va")
+}
+
+model epayment_action {
+  id              Int                         @id @default(autoincrement())
+  epayment_core_id Int                        
+  name            String
+  method          String
+  url             String
+
+  epayment_action_core    epayment_core?      @relation("ActionToECore", fields: [epayment_core_id], references: [id])
+
+  @@map("epayment_action")
+}
+
+model web_token {
+
+  id              Int                         @id @default(autoincrement())
+  nis             String                      @unique
+  token           String
+  created_at      DateTime                    @default(now()) // Waktu otomatis saat data dibuat
+  updated_at      DateTime                    @updatedAt
+
+  web_token_siswa         siswa?              @relation("WebTokenSiswa", fields: [nis], references: [NIS])
+
+  @@map("web_token")
+}
+
