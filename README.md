@@ -6,5 +6,7 @@
 6. Make sure remote database in your env is true and enabled
 7. I'm not good enough to write the docc, im using remote db for the first step, then if u have some trouble when pusshing prisma db please be kind to solve by your self or create issue or dm me on thread / insta
 8. if u want to create custom validation or anything that make this repository to be better please do it and leave pull request
-9. please leave star for this if this repository is legit
-10. thanks, feel free to use this project
+9. npm install (for install dependencies and libraries)
+10. npx nodemon . (for running this project)
+11. please leave star for this if this repository is legit
+12. thanks, feel free to use this project
