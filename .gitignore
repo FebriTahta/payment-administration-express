@@ -3,6 +3,5 @@ node_modules/
 .env
 
 # Ignore semua isi dalam folder config
-src/config/
-src/config/
+src/config/firebase-service-account.json
 src/config/
