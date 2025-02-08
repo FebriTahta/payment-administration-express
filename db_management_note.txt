@@ -1,0 +1,213 @@
+-- store procedure
+DELIMITER $$
+
+CREATE PROCEDURE AddPaymentDetails(IN epaymentCoreId INT)
+BEGIN
+  DECLARE componentJSON JSON;
+  DECLARE componentCount INT;
+  DECLARE idx INT DEFAULT 0;
+  DECLARE compCode INT;
+  DECLARE compNominal INT;
+  DECLARE currentKdTrans VARCHAR(255);
+
+  -- Ambil nilai components dan kd_trans dari epayment_core
+  SELECT components, kd_trans INTO componentJSON, currentKdTrans
+  FROM epayment_core
+  WHERE id = epaymentCoreId;
+
+  -- Log komponen JSON
+  INSERT INTO debug_log (log_message)
+  VALUES (CONCAT('Processing components: ', componentJSON, ' for kd_trans: ', currentKdTrans));
+
+  -- Dapatkan jumlah elemen dalam array JSON components
+  SET componentCount = JSON_LENGTH(componentJSON);
+
+  -- Log jumlah komponen
+  INSERT INTO debug_log (log_message)
+  VALUES (CONCAT('Found ', componentCount, ' components in JSON.'));
+
+  -- Loop melalui setiap elemen array JSON dan tambahkan ke tra_bayar_dtl
+  WHILE idx < componentCount DO
+    SET compCode = JSON_UNQUOTE(JSON_EXTRACT(componentJSON, CONCAT('$[', idx, '].componentsCode')));
+    SET compNominal = JSON_UNQUOTE(JSON_EXTRACT(componentJSON, CONCAT('$[', idx, '].nominal')));
+
+    -- Log data yang akan dimasukkan
+    INSERT INTO debug_log (log_message)
+    VALUES (CONCAT('Inserting component with comp_bayar_id: ', compCode, ', nominal_bayar: ', compNominal, ' for kd_trans: ', currentKdTrans));
+
+    -- Insert ke tra_bayar_dtl
+    INSERT INTO tra_bayar_dtl (kd_trans, comp_bayar_id, nominal_bayar, status, created_at, updated_at)
+    VALUES (currentKdTrans, compCode, compNominal, 0, NOW(), NOW());
+
+    SET idx = idx + 1;
+  END WHILE;
+
+  -- Log bahwa prosedur selesai
+  INSERT INTO debug_log (log_message)
+  VALUES (CONCAT('Completed processing for epayment_core ID: ', epaymentCoreId));
+END$$
+
+DELIMITER ;
+
+
+--------------------------------------------------------------------------------------------------------------------
+
+-- trigger store
+DELIMITER $$
+
+CREATE TRIGGER after_insert_epayment_core
+AFTER INSERT ON epayment_core
+FOR EACH ROW
+BEGIN
+  -- Log awal trigger
+  INSERT INTO debug_log (log_message)
+  VALUES (CONCAT('Trigger called for epayment_core ID: ', NEW.id));
+
+  -- Panggil prosedur
+  CALL AddPaymentDetails(NEW.id);
+
+  -- Log setelah prosedur selesai
+  INSERT INTO debug_log (log_message)
+  VALUES (CONCAT('Trigger processing completed for epayment_core ID: ', NEW.id));
+END$$
+
+DELIMITER ;
+
+--------------------------------------------------------------------------------------------------------------------
+
+-- update procedure
+DELIMITER $$
+
+CREATE PROCEDURE UpdateTransactionToSettlement(
+    IN p_kd_trans VARCHAR(50)
+)
+BEGIN
+    DECLARE v_nis VARCHAR(50);
+    DECLARE v_tanggal_bayar DATETIME;
+    DECLARE v_total_bayar DECIMAL(15, 2);
+    DECLARE v_transaction_status VARCHAR(50);
+
+    -- Ambil data dari tabel epayment_core
+    SELECT 
+        nis, 
+        transaction_time, 
+        gross_amount,
+        transaction_status
+    INTO 
+        v_nis, 
+        v_tanggal_bayar, 
+        v_total_bayar,
+        v_transaction_status
+    FROM epayment_core
+    WHERE kd_trans = p_kd_trans;
+
+    -- Jika transaction_status adalah 'settlement' atau 'capture'
+    IF v_transaction_status IN ('settlement', 'capture') THEN
+
+        -- Insert ke tra_bayar_hdr jika belum ada
+        INSERT INTO tra_bayar_hdr (
+            kd_trans, 
+            nis, 
+            tanggal_bayar, 
+            total_bayar, 
+            keterangan, 
+            created_at, 
+            updated_at, 
+            created_by, 
+            updated_by, 
+            status, 
+            kategori, 
+            metode_bayar
+        )
+        SELECT 
+            p_kd_trans,          -- kd_trans
+            v_nis,               -- nis
+            v_tanggal_bayar,     -- tanggal_bayar
+            v_total_bayar,       -- total_bayar
+            NULL,                -- keterangan
+            NOW(),               -- created_at
+            NOW(),               -- updated_at
+            v_nis,               -- created_by
+            v_nis,               -- updated_by
+            1,                   -- status
+            'BB',                -- kategori
+            'Online'             -- metode_bayar
+        FROM DUAL
+        WHERE NOT EXISTS (
+            SELECT 1 FROM tra_bayar_hdr WHERE kd_trans = p_kd_trans
+        );
+
+        -- Update status pada tra_bayar_dtl
+        UPDATE tra_bayar_dtl
+        SET status = 1
+        WHERE kd_trans = p_kd_trans;
+
+    -- Jika transaction_status bukan 'settlement' atau 'capture'
+    ELSE
+        -- Hapus data pada tra_bayar_hdr jika ada
+        DELETE FROM tra_bayar_hdr
+        WHERE kd_trans = p_kd_trans;
+    END IF;
+
+END$$
+
+DELIMITER ;
+
+--------------------------------------------------------------------------------------------------------------------
+
+--update trigger
+
+DELIMITER $$
+
+CREATE TRIGGER after_update_epayment_core
+AFTER UPDATE ON epayment_core
+FOR EACH ROW
+BEGIN
+  -- Log awal trigger
+  INSERT INTO debug_log (log_message)
+  VALUES (CONCAT('Trigger called for epayment_core ID: ', NEW.id));
+
+  -- Panggil prosedur
+  CALL UpdateTransactionToSettlement(NEW.kd_trans);
+
+  -- Log setelah prosedur selesai
+  INSERT INTO debug_log (log_message)
+  VALUES (CONCAT('Trigger processing completed for epayment_core ID: ', NEW.id));
+END$$
+
+DELIMITER ;
+
+--------------------------------------------------------------------------------------------------------------------
+
+-- delete procedure
+
+DELIMITER $$
+
+CREATE PROCEDURE DeleteEpaymentRelatedData(IN p_id INT, IN kd_trans_var VARCHAR(50))
+BEGIN
+    -- Hapus data terkait di tabel tra_bayar_dtl
+    DELETE FROM tra_bayar_dtl WHERE kd_trans = kd_trans_var;
+    
+    -- Hapus data terkait di tabel va
+    DELETE FROM epayment_va WHERE epayment_core_id = p_id;
+    
+    -- Hapus data terkait di tabel action
+    DELETE FROM epayment_action WHERE epayment_core_id = p_id;
+END $$
+
+DELIMITER ;
+
+--------------------------------------------------------------------------------------------------------------------
+
+-- delete trigger
+
+DELIMITER $$
+
+CREATE TRIGGER after_delete_epayment_core
+AFTER DELETE ON epayment_core
+FOR EACH ROW
+BEGIN
+    CALL DeleteEpaymentRelatedData(OLD.id, OLD.kd_trans);
+END $$
+
+DELIMITER ;
