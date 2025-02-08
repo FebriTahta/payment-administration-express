@@ -1,6 +1,6 @@
 1. Please make sure redis is installed and working in the local and server
 2. Please add firebase-service-account.json for notification (FCM)
-3. For digital payment im using core api midtrans, so make sure your credential key is ready to use this repo
+3. For digital payment im using core api midtrans, so make sure your credential key is ready to integrating in this repo
 4. Copy the .env.default to .env and fill the requirement
 5. This queries using prisma orm, so make sure generate & push prisma model to database
 6. Make sure remote database in your env is true and enabled
