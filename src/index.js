@@ -14,8 +14,6 @@ const app = express(); // inisialisasi express
 const server = http.createServer(app);  // inisialisasi server jalannya app
 const allowedOrigins = [ // Inisialisasi cors
     'http://localhost:3000',
-    'https://next-school-payment.vercel.app',
-    'https://frontend.paysmkkrian1.site',
     'https://app.paysmkkrian1.site'
 ];
 dotenv.config(); // Inisialisasi .env

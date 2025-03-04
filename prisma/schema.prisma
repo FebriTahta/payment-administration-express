@@ -130,7 +130,7 @@ model epayment_action {
   epayment_core_id Int                        
   name            String
   method          String
-  url             String
+  url             String                      @db.VarChar(255)
 
   epayment_action_core    epayment_core?      @relation("ActionToECore", fields: [epayment_core_id], references: [id])
 

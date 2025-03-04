@@ -111,7 +111,7 @@ class MidtransServices {
                 transaction.expiry_time,
                 transaction.kd_trans,
                 transaction.nis,
-                transaction.va_numbers,
+                transaction.permata_va_number ? [{ bank: "permata", va_number: transaction.permata_va_number }] : transaction.va_numbers,
                 transaction.actions,
                 transaction.epayment_core_details
             );
@@ -126,7 +126,7 @@ class MidtransServices {
             return {
                 status: 500,
                 message: 'Error creating transaction',
-                error: error.message,
+                error: await this.parseErrorMessage(error.message),
             };
         }
     }
@@ -399,6 +399,26 @@ class MidtransServices {
             message: "Permintaan detail transaksi ditemukan",
             data: data,
         };
+    }
+
+    async parseErrorMessage(errorMessage) {
+        const regex = /API response: (.*)$/;
+        const match = errorMessage.match(regex);
+        
+        if (match) {
+            const jsonString = match[1];
+            try {
+                const jsonData = JSON.parse(jsonString);
+                return {
+                    message: errorMessage.replace(regex, '').trim(),
+                    data: jsonData
+                };
+            } catch (error) {
+                console.error("JSON parsing error:", error);
+            }
+        }
+        
+        return { message: errorMessage, data: null };
     }
 
     async dataFormat(

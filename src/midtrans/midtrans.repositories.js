@@ -63,7 +63,7 @@ class MidtransRepositories {
                 kdrombel: customerDetails.kdrombel,
                 components: JSON.stringify(components), // Konversi menjadi JSON string
                 expiry_time: transaction.expiry_time,
-                va: JSON.stringify(transaction.va_numbers),
+                va: JSON.stringify(transaction.permata_va_number ? [{ bank: "permata", va_number: transaction.permata_va_number }] : transaction.va_numbers),
                 action: JSON.stringify(transaction.actions)
                 
             },
