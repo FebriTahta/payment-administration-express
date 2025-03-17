@@ -224,7 +224,7 @@ class MidtransServices {
         const maxLastNumber = Math.max(lastNumber, lastNumber2);
         const newNumber = maxLastNumber + 1;
         const paddedNumber = String(newNumber).padStart(5, '0');
-        const newCode = `${currentYear}${currentMonth}/BB/A${paddedNumber}`;
+        const newCode = `ONL/${currentYear}${currentMonth}/BB/A${paddedNumber}`;
 
         return newCode;
     }
