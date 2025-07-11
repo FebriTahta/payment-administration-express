@@ -7,13 +7,14 @@ const PaymentComponentsControllers = require("../payment_components/payment_comp
 const PaymentListControllers = require("../payment_list/payment_list.controllers");
 const MidtransControllers = require("../midtrans/midtrans.controllers");
 const NotificationControllers = require("../fcm/fcm.controllers");
+const SiswaController = require("../siswa/siswa.controller");
 const VerifyToken = require("../middleware");
 
 
 router.post('/verification', VerifControllers.verification);
 router.get('/monthly-recap-payment/:nis/:month?/:year?', VerifyToken(['SISWA']), RecapControllers.recap_monthly_payment);
-router.get('/available-payment-comppnent/:nis/:kdrombel?/:komponen?', VerifyToken(['SISWA']), AvailableControllers.available_payment_component); // pembayaran yang tersedia berdasarkan komponen (yang siap dibayar)
-router.get('/available-payment-all/:nis/:kdrombel', VerifyToken(['SISWA']), AvailableControllers.available_payment_all)
+router.get('/available-payment-comppnent/:nis/:kdrombel?/:tahun_ajaran?/:komponen?', VerifyToken(['SISWA']), AvailableControllers.available_payment_component); // pembayaran yang tersedia berdasarkan komponen (yang siap dibayar)
+router.get('/available-payment-all/:nis/:kdrombel?/:tahun_ajaran?', VerifyToken(['SISWA']), AvailableControllers.available_payment_all)
 router.get('/detail-payment-components/:nis/:kdrombel/:idComponent', VerifyToken(['SISWA']), PaymentComponentsControllers.paymentComponentsStatus);
 router.get('/payment-list/:nis/:kdrombel', VerifyToken(['SISWA']), PaymentListControllers.paymentList);
 router.get('/insufficient-payment/:nis/:kdrombel', VerifyToken(['SISWA']), PaymentListControllers.getInsufficientPayments); // tunggakan pembayaran yang belum lunas
@@ -33,5 +34,8 @@ router.post('/find-firebase-web-token', NotificationControllers.findFirebaseWebT
 
 // tester notification api
 router.post('/test-send-notification',NotificationControllers.sendNotification);
+
+// detail riwayat (kelas & tahun ajaran) siswa 
+router.post('/detail-siswa', SiswaController.detailSiswa);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 const { prisma } = require("../db");
 
 class AvailableRepositories {
-    async available_and_unpaid_component( nis, kdrombel, komponen) {
+    async available_and_unpaid_component( nis, kdrombel, tahun_ajaran, komponen) {
 
         // Proses KDROMBEL untuk mendapatkan kelas dan jurusan
         const { kelas, jurusan } = this.processKDROMBEL(kdrombel);
@@ -64,6 +64,7 @@ class AvailableRepositories {
                         },
                 ],
                 status: 1, // Hanya komponen dengan status aktif
+                tahun_ajaran: tahun_ajaran,
                 kelas: kelas, // Filter berdasarkan kelas
                 jurusan: {
                     in: jurusan, // Filter jurusan, bisa berupa array ["TITL", "ALL"]
@@ -76,6 +77,7 @@ class AvailableRepositories {
                                 payment_core: {
                                     nis: nis, // Filter berdasarkan NIS siswa
                                 },
+                                tahun_ajaran: tahun_ajaran, // <-- Filter tahun ajaran di payment_details
                             },
                         },
                     },
@@ -89,6 +91,7 @@ class AvailableRepositories {
                                 nominal_bayar: {
                                     gt: 0, // Nominal pembayaran sebagian
                                 },
+                                tahun_ajaran: tahun_ajaran, // <-- Filter tahun ajaran di payment_details
                             },
                         },
                     },
@@ -101,6 +104,7 @@ class AvailableRepositories {
                             nis: nis, // Filter pembayaran untuk siswa tertentu
                         },
                         status: 1, // Hanya detail dengan status aktif
+                        tahun_ajaran: tahun_ajaran, // <-- Filter tahun ajaran di payment_details
                     },
                     include: {
                         payment_core: {
@@ -133,6 +137,8 @@ class AvailableRepositories {
 
             return {
                 kode_komponen: comp.id,
+                tahun_ajaran: comp.tahun_ajaran,
+                kode_rombel: comp.kdrombel,
                 nama_komponen: comp.nama_komponen,
                 jatuh_tempo: comp.jatuh_tempo,
                 total_bayar: comp.total_bayar,
@@ -158,7 +164,7 @@ class AvailableRepositories {
         }   
     }
 
-    async available_and_unpaid_all( nis, kdrombel) {
+    async available_and_unpaid_all( nis, kdrombel, tahun_ajaran) {
 
         // Proses KDROMBEL untuk mendapatkan kelas dan jurusan
         const { kelas, jurusan } = this.processKDROMBEL(kdrombel);
@@ -178,6 +184,7 @@ class AvailableRepositories {
                 jurusan: {
                     in: jurusan, // Filter jurusan, bisa berupa array ["TITL", "ALL"]
                 },
+                tahun_ajaran: tahun_ajaran, // <-- Tambahkan filter tahun ajaran di payment_comp
                 OR: [
                     // Komponen tanpa pembayaran oleh siswa tertentu
                     {
@@ -186,6 +193,7 @@ class AvailableRepositories {
                                 payment_core: {
                                     nis: nis, // Filter berdasarkan NIS siswa
                                 },
+                                tahun_ajaran: tahun_ajaran, // <-- Filter tahun ajaran di payment_details
                             },
                         },
                     },
@@ -199,6 +207,7 @@ class AvailableRepositories {
                                 nominal_bayar: {
                                     gt: 0, // Nominal pembayaran sebagian
                                 },
+                                tahun_ajaran: tahun_ajaran, // <-- Filter tahun ajaran di payment_details
                             },
                         },
                     },
@@ -211,6 +220,7 @@ class AvailableRepositories {
                             nis: nis, // Filter pembayaran untuk siswa tertentu
                         },
                         status: 1, // Hanya detail dengan status aktif
+                        tahun_ajaran: tahun_ajaran, // <-- Filter tahun ajaran di payment_details
                     },
                     include: {
                         payment_core: {

@@ -6,7 +6,7 @@ const availableRepositories = require("./available.repositories");
 
 class AvailableServices {
 
-    async available_payment_component( nis, kdrombel,komponen, res) {
+    async available_payment_component( nis, kdrombel,tahun_ajaran,komponen, res) {
         // Cek cache
         // const cached = await cache.get(`available_payment_component:${nis}_${kdrombel}_${komponen}`);
         // if (cached) {
@@ -21,7 +21,7 @@ class AvailableServices {
         // }
 
         // Jika cache kosong, ambil dari repository(DB)
-        const result = await availableRepositories.available_and_unpaid_component( nis, kdrombel,komponen);
+        const result = await availableRepositories.available_and_unpaid_component( nis, kdrombel,tahun_ajaran,komponen);
         if (!result) {
             return {
                 status: 404,
@@ -47,7 +47,7 @@ class AvailableServices {
         };
     }
 
-    async available_payment_all( nis, kdrombel, res) {
+    async available_payment_all( nis, kdrombel,tahun_ajaran, res) {
 
         // const cacheKey = `available_payment_all:${nis}_${kdrombel}`;
         // const cachedData = await CacheHelper.getCache(res, cacheKey);
@@ -60,7 +60,7 @@ class AvailableServices {
         //     };
         // }
 
-        const response = await availableRepositories.available_and_unpaid_all(nis, kdrombel);
+        const response = await availableRepositories.available_and_unpaid_all(nis, kdrombel, tahun_ajaran);
 
         if (!response) {
             return {

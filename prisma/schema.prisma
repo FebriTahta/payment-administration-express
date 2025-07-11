@@ -4,6 +4,26 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+// Jalankan Perintah Prisma
+// Setelah update schema.prisma, jalankan:
+
+// bash
+// npx prisma generate
+// Ini akan memperbarui node_modules/.prisma/client agar Prisma Client mengenali model dan relasi barumu.
+// jika tidak bisa silahkan hapus dulu /node_module/.prisma
+// generate lagi dengan "npx prisma generate"
+
+// Jika kamu ingin membuat / mengupdate database:
+
+// bash
+// npx prisma migrate dev --name add-riwayat-rombel
+// Pastikan kamu sedang menggunakan database lokal jika menggunakan migrate.
+
+// Kalau hanya ingin sinkronisasi tanpa migrasi struktural (karena tabel sudah ada di database), gunakan:
+
+// bash
+// npx prisma db pull
+// Ini menarik struktur dari database ke schema.prisma — cocok kalau kamu sudah buat tabel lewat cara lain (manual/sql tools).  
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
@@ -29,6 +49,32 @@ model siswa {
   payments        payment_core[]              @relation("SiswaToPayments")
   siswa_epayment_core epayment_core[]         @relation("SiswaToECore")   
   siswa_web_token web_token?                  @relation("WebTokenSiswa")
+
+  riwayat_kelas   riwayat_kelas[]    @relation("SiswaToRiwayat")
+}
+
+// tambahan tabel baru pada prisma
+model rombel {
+  id              Int                         @id
+  KODEROMBEL      String
+  NAMAROMBEL      String
+  TINGKAT         Int
+  KDJURUSAN       String
+  WALIKELAS       String
+
+  riwayat_kelas   riwayat_kelas[]    @relation("RombelToRiwayat")
+}
+
+// tabel baru pada server database
+model riwayat_kelas {
+  id              Int                         @id
+  siswa_id        Int
+  rombel_id       Int
+  tahun_ajaran    String
+  status          Int
+
+  siswa           siswa      @relation("SiswaToRiwayat", fields: [siswa_id], references: [id])
+  rombel          rombel     @relation("RombelToRiwayat", fields: [rombel_id], references: [id])
 }
 
 model payment_comp {
@@ -45,6 +91,7 @@ model payment_comp {
   khusus_bilingual Int
   created_at       DateTime
   updated_at       DateTime
+  tahun_ajaran     String                     // kolom tambahan baru
 
   payment_details  payment_detail[]           @relation("CompToDetails")
 
@@ -80,6 +127,7 @@ model payment_detail {
   status              Int
   created_at          DateTime
   updated_at          DateTime
+  tahun_ajaran        String          // kolom baru
 
   payment_core        payment_core?   @relation("CoreToDetails", fields: [kd_trans], references: [kd_trans], map: "tra_bayar_dtl_kd_trans_fkey_core")
   payment_comp        payment_comp?   @relation("CompToDetails", fields: [comp_bayar_id], references: [id])
